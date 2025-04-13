@@ -3,7 +3,8 @@
 embulk-input-iceberg is the Embulk input plugin for Apache Iceberg.
 
 ## Overview
-Required Embulk version >= 0.11.5
+Required Embulk version >= 0.11.5.  
+Java 11. iceberg API support Java 11 above. (Despite Embulk official support is Java 8)
 
 * **Plugin type**: input
 * **Resume supported**: no
@@ -32,7 +33,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.0.1
+    version: 0.0.2
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -50,7 +51,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.0.1
+    version: 0.0.2
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -72,7 +73,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.0.1
+    version: 0.0.2
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
