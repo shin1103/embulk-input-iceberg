@@ -28,7 +28,7 @@ group = "io.github.shin1103"
 
 // Set the version of the plugin.
 //version = "0.0.1-SNAPSHOT"
-version = "0.0.1"
+version = "0.0.2"
 
 // Set the description of your plugin.
 description = "An Embulk plugin to load iceberg data."
@@ -86,7 +86,10 @@ dependencies {
     implementation "javax.validation:validation-api:1.1.0.Final"
 
     // iceberg
-    implementation "org.apache.iceberg:iceberg-core:$icebergVersion"
+    implementation("org.apache.iceberg:iceberg-core:$icebergVersion") {
+        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
+    }
+    implementation "com.github.ben-manes.caffeine:caffeine:3.1.1"
     implementation "org.apache.iceberg:iceberg-common:$icebergVersion"
     implementation "org.apache.iceberg:iceberg-parquet:$icebergVersion"
     implementation "org.apache.iceberg:iceberg-data:$icebergVersion"
@@ -146,7 +149,7 @@ publishing {
             groupId = "io.github.shin1103"
             artifactId = "embulk-input-iceberg"
 //            version = "0.0.1-SNAPSHOT"
-            version = "0.0.1"
+            version = "0.0.2"
 
             from components.java
             // javadocJar and sourcesJar are added by java.withJavadocJar() and java.withSourcesJar() above.
