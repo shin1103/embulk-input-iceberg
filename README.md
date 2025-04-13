@@ -32,7 +32,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.1.0
+    version: 0.0.1
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -50,7 +50,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.1.0
+    version: 0.0.1
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -72,7 +72,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.1.0
+    version: 0.0.1
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -82,15 +82,16 @@ in:
   endpoint: "http://localhost:9000/"
   path_style_access: "true"
   table_filters:
+    - {type: ISNULL, column: id}
     - {type: EQUAL, column: id, value: 4}
     - {type: GREATERTHAN, column: id, value: 2}
-    - {type: IN, column: id, in_values: [2 ,3]}
+    - {type: IN, column: id, in_values: [2, 3]}
 ```
 ## Types
 Types are different from [iceberg](https://iceberg.apache.org/spec/#primitive-types) and [Embulk](https://www.embulk.org/docs/built-in.html).
 So some iceberg type aren't supported.
 
-Unported Iceberg Types
+Unsupported Iceberg Types
 - UUID
 - FIXED
 - BINARY
