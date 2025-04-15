@@ -1,7 +1,9 @@
 package io.github.shin1103.embulk.input.iceberg;
 
 import io.github.shin1103.embulk.util.ClassLoaderSwap;
-//
+
+import java.math.BigDecimal;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
@@ -20,7 +22,7 @@ import org.embulk.spi.*;
 import org.embulk.util.config.*;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -77,7 +79,7 @@ public class IcebergInputPlugin implements InputPlugin {
           Example
           REST: http://localhost:8181
          */
-        String getUri();
+        Optional<String> getUri();
 
         @Config("warehouse_location")
         @ConfigDefault("null")
@@ -104,7 +106,7 @@ public class IcebergInputPlugin implements InputPlugin {
           Example
           http://localhost:9000/
          */
-        String getEndpoint();
+        Optional<String> getEndpoint();
 
         @Config("path_style_access")
         @ConfigDefault("true")
@@ -112,25 +114,27 @@ public class IcebergInputPlugin implements InputPlugin {
           use path_style_access.
           If you use Example settings, actual path is "http://localhost:9000/warehouse/".
          */
-        String getPathStyleAccess();
+        Optional<String> getPathStyleAccess();
 
         @Config("table_filters")
-        @ConfigDefault("{}")
+        @ConfigDefault("null")
         Optional<List<IcebergFilterOption>> getTableFilters();
 
         @Config("columns")
-        @ConfigDefault("{}")
+        @ConfigDefault("null")
         Optional<List<String>> getColumns();
     }
 
     @Override
     public ConfigDiff transaction(ConfigSource configSource, Control control) {
-        final PluginTask task = CONFIG_MAPPER.map(configSource, this.getTaskClass());
+        try (ClassLoaderSwap<? extends IcebergInputPlugin> ignored = new ClassLoaderSwap<>(this.getClass())) {
+            final PluginTask task = CONFIG_MAPPER.map(configSource, this.getTaskClass());
 
-        Table table = this.get_table(task);
+            Table table = this.get_table(task);
 
-        Schema schema = this.createEmbulkSchema(table.schema(), task);
-        return resume(task.toTaskSource(), schema, 1, control);
+            Schema schema = this.createEmbulkSchema(table.schema(), task);
+            return resume(task.toTaskSource(), schema, 1, control);
+        }
     }
 
     private Table get_table(PluginTask task) {
@@ -200,7 +204,11 @@ public class IcebergInputPlugin implements InputPlugin {
 
                     @Override
                     public void doubleColumn(Column column) {
-                        pageBuilder.setDouble(column, (Double) data.getField(column.getName()));
+                        if (data.getField(column.getName()).getClass() == BigDecimal.class) {
+                            pageBuilder.setDouble(column, ((BigDecimal) data.getField(column.getName())).doubleValue());
+                        } else {
+                            pageBuilder.setDouble(column, (Double) data.getField(column.getName()));
+                        }
                     }
 
                     @Override
@@ -210,7 +218,7 @@ public class IcebergInputPlugin implements InputPlugin {
 
                     @Override
                     public void timestampColumn(Column column) {
-                        pageBuilder.setTimestamp(column, (Instant) data.getField(column.getName()));
+                        pageBuilder.setTimestamp(column, ((OffsetDateTime) data.getField(column.getName())).toInstant());
                     }
 
                     @Override
