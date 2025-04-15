@@ -12,9 +12,10 @@ Java 11. iceberg API support Java 11 above. (Despite Embulk official support is 
 * **Guess supported**: no
 
 ## Configuration
-Now Only support REST Catalog, and MinIO Storage.
+Now Only support REST Catalog with MinIO Storage, and Glue Catalog.
 
-- **namespace** catalog namespace name (string, required)
+### Embulk Configuration
+- **namespace** catalog namespace name. if glue set glue database. (string, required)
 - **table** catalog table name (string, required)
 - **catalog_type** catalog type. use "REST" (string, required)
 - **uri** catalog uri. if "REST" use http URI scheme  (string, required)
@@ -24,6 +25,13 @@ Now Only support REST Catalog, and MinIO Storage.
 - **path_style_access**: use path url (string, required)
 - **table_filters**: filter rows. support filter is predicate expressions only. [expressions](https://iceberg.apache.org/docs/1.8.1/api/#expressions) (list, optional)
 - **columns**: select column name list. if not define, all columns are selected.  (list, optional)
+
+### environment
+When access Object Storage, normally use `org.apache.iceberg.aws.s3.S3FileIO`.  
+We need to set Environment Variable below to access Object Storage.
+- AWS_REGION
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
 
 ## Example
 1. Select All rows and columns.
@@ -88,6 +96,22 @@ in:
     - {type: GREATERTHAN, column: id, value: 2}
     - {type: IN, column: id, in_values: [2, 3]}
 ```
+
+4. Use Glue catalog
+```yaml
+in:
+  type:
+    source: maven
+    group: io.github.shin1103
+    name: iceberg
+    version: 0.0.2
+  namespace: "my_database" # Set Glue Database
+  table: "my_table_2"
+  catalog_type: "glue"
+  warehouse_location: "s3://warehouse/"
+  file_io_impl: "org.apache.iceberg.aws.s3.S3FileIO"
+```
+
 ## Types
 Types are different from [iceberg](https://iceberg.apache.org/spec/#primitive-types) and [Embulk](https://www.embulk.org/docs/built-in.html).
 So some iceberg type aren't supported.
