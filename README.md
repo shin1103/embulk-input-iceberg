@@ -41,7 +41,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.0.2
+    version: 0.0.3
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -59,7 +59,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.0.2
+    version: 0.0.3
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -81,7 +81,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.0.2
+    version: 0.0.3
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -104,7 +104,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.0.2
+    version: 0.0.3
   namespace: "my_database" # Set Glue Database
   table: "my_table_2"
   catalog_type: "glue"
