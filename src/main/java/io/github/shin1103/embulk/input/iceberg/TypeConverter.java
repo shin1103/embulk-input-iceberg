@@ -20,13 +20,13 @@ public class TypeConverter {
             case DECIMAL:
                 return Types.DOUBLE;
             case DATE:
-            case TIME:
             case TIMESTAMP:
-            case TIMESTAMP_NANO:
                 return Types.TIMESTAMP;
             case STRING:
-            case UNKNOWN:
+            case TIME:
                 return Types.STRING;
+            case TIMESTAMP_NANO: // Support Iceberg v3
+            case UNKNOWN:
             case UUID:
             case FIXED:
             case BINARY:

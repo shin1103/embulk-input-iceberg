@@ -22,7 +22,7 @@ import org.embulk.spi.*;
 import org.embulk.util.config.*;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.List;
 import java.util.Optional;
 
@@ -194,18 +194,36 @@ public class IcebergInputPlugin implements InputPlugin {
                 schema.visitColumns(new ColumnVisitor() {
                     @Override
                     public void booleanColumn(Column column) {
+                        if (data.getField(column.getName()) == null) {
+                            pageBuilder.setNull(column);
+                            return;
+                        }
                         pageBuilder.setBoolean(column, (Boolean) data.getField(column.getName()));
                     }
 
                     @Override
                     public void longColumn(Column column) {
-                        pageBuilder.setLong(column, (Long) data.getField(column.getName()));
+                        if (data.getField(column.getName()) == null) {
+                            pageBuilder.setNull(column);
+                            return;
+                        }
+                        if (data.getField(column.getName()).getClass() == Long.class) {
+                            pageBuilder.setLong(column, (Long) data.getField(column.getName()));
+                        } else {
+                            pageBuilder.setLong(column, ((Integer) data.getField(column.getName())).longValue());
+                        }
                     }
 
                     @Override
                     public void doubleColumn(Column column) {
+                        if (data.getField(column.getName()) == null) {
+                            pageBuilder.setNull(column);
+                            return;
+                        }
                         if (data.getField(column.getName()).getClass() == BigDecimal.class) {
                             pageBuilder.setDouble(column, ((BigDecimal) data.getField(column.getName())).doubleValue());
+                        } else if (data.getField(column.getName()).getClass() == Float.class) {
+                            pageBuilder.setDouble(column, ((Float) data.getField(column.getName())).doubleValue());
                         } else {
                             pageBuilder.setDouble(column, (Double) data.getField(column.getName()));
                         }
@@ -213,12 +231,30 @@ public class IcebergInputPlugin implements InputPlugin {
 
                     @Override
                     public void stringColumn(Column column) {
-                        pageBuilder.setString(column, (String) data.getField(column.getName()));
+                        if (data.getField(column.getName()) == null) {
+                            pageBuilder.setNull(column);
+                            return;
+                        }
+                        if (data.getField(column.getName()).getClass() == LocalTime.class) {
+                            pageBuilder.setString(column, ((LocalTime) data.getField(column.getName())).toString());
+                        } else {
+                            pageBuilder.setString(column, (String) data.getField(column.getName()));
+                        }
                     }
 
                     @Override
                     public void timestampColumn(Column column) {
-                        pageBuilder.setTimestamp(column, ((OffsetDateTime) data.getField(column.getName())).toInstant());
+                        if (data.getField(column.getName()) == null) {
+                            pageBuilder.setNull(column);
+                            return;
+                        }
+                        if (data.getField(column.getName()).getClass() == LocalDate.class) {
+                            pageBuilder.setTimestamp(column, ((LocalDate) data.getField(column.getName())).atStartOfDay(ZoneId.systemDefault()).toInstant());
+                        } else if (data.getField(column.getName()).getClass() == LocalDateTime.class) {
+                            pageBuilder.setTimestamp(column, ((LocalDateTime) data.getField(column.getName())).atZone(ZoneId.systemDefault()).toInstant());
+                        } else {
+                            pageBuilder.setTimestamp(column, ((OffsetDateTime) data.getField(column.getName())).toInstant());
+                        }
                     }
 
                     @Override
