@@ -116,6 +116,13 @@ public class IcebergInputPlugin implements InputPlugin {
          */
         Optional<String> getPathStyleAccess();
 
+        @Config("decimal_as_string")
+        @ConfigDefault("false")
+        /*
+          Embulk can't treat Bigdecimal. If you want to treat precise, treat as string.
+         */
+        boolean getDecimalAsString();
+
         @Config("table_filters")
         @ConfigDefault("null")
         Optional<List<IcebergFilterOption>> getTableFilters();
@@ -154,13 +161,13 @@ public class IcebergInputPlugin implements InputPlugin {
             if (task.getColumns().isPresent()) {
                 if (task.getColumns().get().contains(col.name())) {
                     // only add column defined columns option in config.yml
-                    schemaBuilder.add(col.name(), TypeConverter.convertIcebergTypeToEmbulkType(col.type()));
+                    schemaBuilder.add(col.name(), TypeConverter.convertIcebergTypeToEmbulkType(col.type(), task));
                 } else {
                     continue;
                 }
             } else {
                 // add all columns if columns option is not defined in config.yml
-                schemaBuilder.add(col.name(), TypeConverter.convertIcebergTypeToEmbulkType(col.type()));
+                schemaBuilder.add(col.name(), TypeConverter.convertIcebergTypeToEmbulkType(col.type(), task));
             }
         }
         return schemaBuilder.build();
@@ -237,6 +244,8 @@ public class IcebergInputPlugin implements InputPlugin {
                         }
                         if (data.getField(column.getName()).getClass() == LocalTime.class) {
                             pageBuilder.setString(column, ((LocalTime) data.getField(column.getName())).toString());
+                        } else if (data.getField(column.getName()).getClass() == BigDecimal.class) {
+                            pageBuilder.setString(column, ((BigDecimal) data.getField(column.getName())).toPlainString());
                         } else {
                             pageBuilder.setString(column, (String) data.getField(column.getName()));
                         }

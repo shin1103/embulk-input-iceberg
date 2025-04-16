@@ -23,6 +23,7 @@ Now Only support REST Catalog with MinIO Storage, and Glue Catalog.
 - **file_io_impl** implementation of file io.  (string, required)
 - **endpoint**: Object Storage endpoint. if set path_style_access true, actual path is  like "http://localhost:9000/warehouse/" (string, required)
 - **path_style_access**: use path url (string, required)
+- **decimal_as_string**: if true, treat decimal as string. else treat as double (boolean, optional, default false)
 - **table_filters**: filter rows. support filter is predicate expressions only. [expressions](https://iceberg.apache.org/docs/1.8.1/api/#expressions) (list, optional)
 - **columns**: select column name list. if not define, all columns are selected.  (list, optional)
 
@@ -90,6 +91,7 @@ in:
   file_io_impl: "org.apache.iceberg.aws.s3.S3FileIO"
   endpoint: "http://localhost:9000/"
   path_style_access: "true"
+  decimal_as_string: true
   table_filters:
     - {type: ISNULL, column: id}
     - {type: EQUAL, column: id, value: 4}

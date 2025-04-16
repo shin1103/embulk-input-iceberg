@@ -8,7 +8,8 @@ public class TypeConverter {
     /*
         https://iceberg.apache.org/spec/#primitive-types
      */
-    public static Type convertIcebergTypeToEmbulkType(org.apache.iceberg.types.Type icebergType){
+    public static Type convertIcebergTypeToEmbulkType(org.apache.iceberg.types.Type icebergType, IcebergInputPlugin.PluginTask task){
+
         switch (icebergType.typeId()){
             case BOOLEAN:
                 return Types.BOOLEAN;
@@ -17,8 +18,13 @@ public class TypeConverter {
                 return Types.LONG;
             case FLOAT:
             case DOUBLE:
-            case DECIMAL:
                 return Types.DOUBLE;
+            case DECIMAL:
+                if (task.getDecimalAsString()) {
+                    return Types.STRING;
+                } else {
+                    return Types.DOUBLE;
+                }
             case DATE:
             case TIMESTAMP:
                 return Types.TIMESTAMP;
