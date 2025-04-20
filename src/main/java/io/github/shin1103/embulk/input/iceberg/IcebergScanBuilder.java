@@ -13,9 +13,8 @@ public class IcebergScanBuilder {
         task.getColumns().ifPresent(builder::select);
 
         // determine select rows
-        var filters = task.getTableFilters();
-        if (filters.isPresent()) {
-            for (IcebergFilterOption filter : filters.get()) {
+        task.getTableFilters().ifPresent(filters -> {
+            for (IcebergFilterOption filter : filters) {
                 // support filter is predicate expressions only
                 // https://iceberg.apache.org/docs/1.8.1/api/#expressions
                 switch (filter.getFilterType().toUpperCase()) {
@@ -26,60 +25,39 @@ public class IcebergScanBuilder {
                         builder.where(Expressions.notNull(filter.getColumn()));
                         continue;
                     case "EQUAL":
-                        if (filter.getValue().isPresent()) {
-                            builder.where(Expressions.equal(filter.getColumn(), filter.getValue().get()));
-                        }
+                        filter.getValue().ifPresent(f -> builder.where(Expressions.equal(filter.getColumn(), f)));
                         continue;
                     case "NOTEQUAL":
-                        if (filter.getValue().isPresent()) {
-                            builder.where(Expressions.notEqual(filter.getColumn(), filter.getValue().get()));
-                        }
+                        filter.getValue().ifPresent(f -> builder.where(Expressions.notEqual(filter.getColumn(), f)));
                         continue;
                     case "LESSTHAN":
-                        if (filter.getValue().isPresent()) {
-                            builder.where(Expressions.lessThan(filter.getColumn(), filter.getValue().get()));
-                        }
+                        filter.getValue().ifPresent(f -> builder.where(Expressions.lessThan(filter.getColumn(), f)));
                         continue;
                     case "LESSTHANOREQUAL":
-                        if (filter.getValue().isPresent()) {
-                            builder.where(Expressions.lessThanOrEqual(filter.getColumn(), filter.getValue().get()));
-                        }
+                        filter.getValue().ifPresent(f -> builder.where(Expressions.lessThanOrEqual(filter.getColumn(), f)));
                         continue;
                     case "GREATERTHAN":
-                        if (filter.getValue().isPresent()) {
-                            builder.where(Expressions.greaterThan(filter.getColumn(), filter.getValue().get()));
-                        }
+                        filter.getValue().ifPresent(f -> builder.where(Expressions.greaterThan(filter.getColumn(), f)));
                         continue;
                     case "GREATERTHANOREQUAL":
-                        if (filter.getValue().isPresent()) {
-                            builder.where(Expressions.greaterThanOrEqual(filter.getColumn(), filter.getValue().get()));
-                        }
+                        filter.getValue().ifPresent(f -> builder.where(Expressions.greaterThanOrEqual(filter.getColumn(), f)));
                         continue;
                     case "IN":
-                        if (filter.getInValues().isPresent()) {
-                            builder.where(Expressions.in(filter.getColumn(), filter.getInValues().get()));
-                        }
+                        filter.getInValues().ifPresent(f -> builder.where(Expressions.in(filter.getColumn(), f)));
                         continue;
                     case "NOTIN":
-                        if (filter.getInValues().isPresent()) {
-                            builder.where(Expressions.notIn(filter.getColumn(), filter.getInValues().get()));
-                        }
+                        filter.getInValues().ifPresent(f -> builder.where(Expressions.notIn(filter.getColumn(), f)));
                         continue;
                     case "STARTSWITH":
-                        if (filter.getInValues().isPresent()) {
-                            builder.where(Expressions.startsWith(filter.getColumn(), (String) filter.getValue().get()));
-                        }
+                        filter.getValue().ifPresent(f -> builder.where(Expressions.startsWith(filter.getColumn(), (String) f)));
                         continue;
                     case "NOTSTARTSWITH":
-                        if (filter.getValue().isPresent()) {
-                            builder.where(Expressions.notStartsWith(filter.getColumn(), (String) filter.getValue().get()));
-                        }
+                        filter.getValue().ifPresent(f -> builder.where(Expressions.notStartsWith(filter.getColumn(), (String) f)));
                         continue;
                     default:
                 }
-
             }
-        }
+        });
         return builder;
     }
 }

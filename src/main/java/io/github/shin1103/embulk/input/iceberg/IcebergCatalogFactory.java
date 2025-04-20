@@ -5,13 +5,14 @@ import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.jdbc.JdbcCatalog;
 import org.apache.iceberg.rest.RESTCatalog;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class IcebergCatalogFactory {
-    private enum CatalogType {
+    public enum CatalogType {
         REST,
         JDBC,
         GLUE
@@ -25,7 +26,7 @@ public class IcebergCatalogFactory {
                 case REST:
                     return createRestCatalog(task);
                 case JDBC:
-                    throw new UnsupportedOperationException("JDBC is not supported");
+                    return createJdbcCatalog(task);
                 case GLUE:
                     return createGlueCatalog(task);
                 default:
@@ -39,33 +40,27 @@ public class IcebergCatalogFactory {
     private static RESTCatalog createRestCatalog(IcebergInputPlugin.PluginTask task) {
         Map<String, String> properties = new HashMap<>();
 
-        properties.put(CatalogProperties.CATALOG_IMPL, "org.apache.iceberg.rest.RESTCatalog");
-        if(task.getUri().isPresent()) {
-            properties.put(CatalogProperties.URI, task.getUri().get());
-        }
+        properties.put(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
+        task.getUri().ifPresent(uri -> properties.put(CatalogProperties.URI, uri));
         properties.put(CatalogProperties.WAREHOUSE_LOCATION, task.getWarehouseLocation());
         properties.put(CatalogProperties.FILE_IO_IMPL, task.getFileIoImpl());
-        if(task.getEndpoint().isPresent()) {
-            properties.put(S3FileIOProperties.ENDPOINT, task.getEndpoint().get());
-        }
-        if(task.getPathStyleAccess().isPresent()) {
-            // https://github.com/apache/iceberg/issues/7709
-            properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, task.getPathStyleAccess().get());
-        }
+        task.getEndpoint().ifPresent(endpoint -> properties.put(S3FileIOProperties.ENDPOINT, endpoint));
+        // https://github.com/apache/iceberg/issues/7709
+        task.getPathStyleAccess().ifPresent(access -> properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, access));
         // REST Catalog can read data using http protocol.
         // But S3FileIO Library need to REGION and ACCESS_KEY info using Environment variable
 
         RESTCatalog catalog = new RESTCatalog();
         Configuration conf = new Configuration();
         catalog.setConf(conf);
-        catalog.initialize("internal_embulk_catalog", properties);
+        task.getCatalogName().ifPresent(catalogName -> catalog.initialize(catalogName, properties));
         return catalog;
     }
 
     private static GlueCatalog createGlueCatalog(IcebergInputPlugin.PluginTask task) {
         Map<String, String> properties = new HashMap<>();
 
-        properties.put(CatalogProperties.CATALOG_IMPL, "org.apache.iceberg.aws.glue.GlueCatalog");
+        properties.put(CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
         properties.put(CatalogProperties.WAREHOUSE_LOCATION, task.getWarehouseLocation());
         properties.put(CatalogProperties.FILE_IO_IMPL, task.getFileIoImpl());
         // S3FileIO Library need to REGION and ACCESS_KEY info using Environment variable
@@ -73,7 +68,31 @@ public class IcebergCatalogFactory {
         GlueCatalog catalog = new GlueCatalog();
         Configuration conf = new Configuration();
         catalog.setConf(conf);
-        catalog.initialize("internal_embulk_catalog", properties);
+
+        task.getCatalogName().ifPresent(catalogName -> catalog.initialize(catalogName, properties));
         return catalog;
+    }
+
+    private static JdbcCatalog createJdbcCatalog(IcebergInputPlugin.PluginTask task) {
+        Map<String, String> properties = new HashMap<>();
+
+        properties.put(CatalogProperties.CATALOG_IMPL, JdbcCatalog.class.getName());
+        properties.put(CatalogProperties.WAREHOUSE_LOCATION, task.getWarehouseLocation());
+        properties.put(CatalogProperties.FILE_IO_IMPL, task.getFileIoImpl());
+
+        task.getEndpoint().ifPresent(endpoint -> properties.put(S3FileIOProperties.ENDPOINT, endpoint));
+        // https://github.com/apache/iceberg/issues/7709
+        task.getPathStyleAccess().ifPresent(access -> properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, access));
+
+        task.getUri().ifPresent(uri -> properties.put(CatalogProperties.URI, uri));
+        task.getJdbcUser().ifPresent(user -> properties.put(JdbcCatalog.PROPERTY_PREFIX + "user", user));
+        task.getJdbcPass().ifPresent(pass -> properties.put(JdbcCatalog.PROPERTY_PREFIX + "password", pass));
+
+        JdbcCatalog catalog = new JdbcCatalog();
+        Configuration conf = new Configuration();
+        catalog.setConf(conf);
+        task.getCatalogName().ifPresent(catalogName -> catalog.initialize(catalogName, properties));
+        return catalog;
+
     }
 }

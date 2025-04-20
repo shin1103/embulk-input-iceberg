@@ -2,9 +2,6 @@ package io.github.shin1103.embulk.input.iceberg;
 
 import io.github.shin1103.embulk.util.ClassLoaderSwap;
 
-import java.math.BigDecimal;
-
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
@@ -22,9 +19,7 @@ import org.embulk.spi.*;
 import org.embulk.util.config.*;
 
 import java.io.IOException;
-import java.time.*;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import org.embulk.util.config.modules.ZoneIdModule;
 import org.slf4j.Logger;
@@ -51,6 +46,13 @@ public class IcebergInputPlugin implements InputPlugin {
 
     public interface PluginTask extends Task
     {
+        @Config("catalog_name")
+        @ConfigDefault("\"embulk_internal_catalog\"")
+        /*
+          Catalog Name. Need to set if JDBC Catalog.
+         */
+        Optional<String> getCatalogName();
+
         @Config("namespace")
         @ConfigDefault("null")
         /*
@@ -123,6 +125,34 @@ public class IcebergInputPlugin implements InputPlugin {
          */
         boolean getDecimalAsString();
 
+        @Config("jdbc_driver_path")
+        @ConfigDefault("null")
+        /*
+          JDBC driver jar file path
+         */
+        Optional<String> getJdbcDriverPath();
+
+        @Config("jdbc_driver_class_name")
+        @ConfigDefault("null")
+        /*
+          JDBC driver class name
+         */
+        Optional<String> getJdbcDriverClassName();
+
+        @Config("jdbc_user")
+        @ConfigDefault("null")
+        /*
+          JDBC database user name
+         */
+        Optional<String> getJdbcUser();
+
+        @Config("jdbc_pass")
+        @ConfigDefault("null")
+        /*
+          JDBC database password
+         */
+        Optional<String> getJdbcPass();
+
         @Config("table_filters")
         @ConfigDefault("null")
         Optional<List<IcebergFilterOption>> getTableFilters();
@@ -134,24 +164,27 @@ public class IcebergInputPlugin implements InputPlugin {
 
     @Override
     public ConfigDiff transaction(ConfigSource configSource, Control control) {
+
         try (ClassLoaderSwap<? extends IcebergInputPlugin> ignored = new ClassLoaderSwap<>(this.getClass())) {
             final PluginTask task = CONFIG_MAPPER.map(configSource, this.getTaskClass());
 
-            Table table = this.get_table(task);
+            Table table = this.getTable(task);
 
             Schema schema = this.createEmbulkSchema(table.schema(), task);
             return resume(task.toTaskSource(), schema, 1, control);
         }
     }
 
-    private Table get_table(PluginTask task) {
-        Catalog catalog = IcebergCatalogFactory.createCatalog(task.getCatalogType(), task);
-        Namespace n_space = Namespace.of(task.getNamespace());
-        TableIdentifier name = TableIdentifier.of(n_space, task.getTable());
-        Table table = catalog.loadTable(name);
-        logger.debug(table.schemas().toString());
+    private Table getTable(PluginTask task) {
+        try(JdbcDriverMangerLoaderSwap ignored = new JdbcDriverMangerLoaderSwap(task)){
+            Catalog catalog = IcebergCatalogFactory.createCatalog(task.getCatalogType(), task);
+            Namespace n_space = Namespace.of(task.getNamespace());
+            TableIdentifier name = TableIdentifier.of(n_space, task.getTable());
+            Table table = catalog.loadTable(name);
+            logger.debug(table.schemas().toString());
 
-        return table;
+            return table;
+        }
     }
 
     private Schema createEmbulkSchema(org.apache.iceberg.Schema icebergSchema, PluginTask task){
@@ -193,93 +226,19 @@ public class IcebergInputPlugin implements InputPlugin {
         final PluginTask task = TASK_MAPPER.map(taskSource, this.getTaskClass());
 
         BufferAllocator allocator = Exec.getBufferAllocator();
-        PageBuilder pageBuilder = Exec.getPageBuilder(allocator, schema, pageOutput);
+        try(PageBuilder pageBuilder = Exec.getPageBuilder(allocator, schema, pageOutput)){
+            Table table = this.getTable(task);
+            try(CloseableIterable<Record> scan = IcebergScanBuilder.createBuilder(table, task).build()){
+                for (Record data : scan) {
+                    schema.visitColumns(new IcebergColumnVisitor(data, pageBuilder));
 
-        Table table = this.get_table(task);
-        try(CloseableIterable<Record> scan = IcebergScanBuilder.createBuilder(table, task).build()){
-            for (Record data : scan) {
-                schema.visitColumns(new ColumnVisitor() {
-                    @Override
-                    public void booleanColumn(Column column) {
-                        if (data.getField(column.getName()) == null) {
-                            pageBuilder.setNull(column);
-                            return;
-                        }
-                        pageBuilder.setBoolean(column, (Boolean) data.getField(column.getName()));
-                    }
-
-                    @Override
-                    public void longColumn(Column column) {
-                        if (data.getField(column.getName()) == null) {
-                            pageBuilder.setNull(column);
-                            return;
-                        }
-                        if (data.getField(column.getName()).getClass() == Long.class) {
-                            pageBuilder.setLong(column, (Long) data.getField(column.getName()));
-                        } else {
-                            pageBuilder.setLong(column, ((Integer) data.getField(column.getName())).longValue());
-                        }
-                    }
-
-                    @Override
-                    public void doubleColumn(Column column) {
-                        if (data.getField(column.getName()) == null) {
-                            pageBuilder.setNull(column);
-                            return;
-                        }
-                        if (data.getField(column.getName()).getClass() == BigDecimal.class) {
-                            pageBuilder.setDouble(column, ((BigDecimal) data.getField(column.getName())).doubleValue());
-                        } else if (data.getField(column.getName()).getClass() == Float.class) {
-                            pageBuilder.setDouble(column, ((Float) data.getField(column.getName())).doubleValue());
-                        } else {
-                            pageBuilder.setDouble(column, (Double) data.getField(column.getName()));
-                        }
-                    }
-
-                    @Override
-                    public void stringColumn(Column column) {
-                        if (data.getField(column.getName()) == null) {
-                            pageBuilder.setNull(column);
-                            return;
-                        }
-                        if (data.getField(column.getName()).getClass() == LocalTime.class) {
-                            pageBuilder.setString(column, ((LocalTime) data.getField(column.getName())).toString());
-                        } else if (data.getField(column.getName()).getClass() == BigDecimal.class) {
-                            pageBuilder.setString(column, ((BigDecimal) data.getField(column.getName())).toPlainString());
-                        } else {
-                            pageBuilder.setString(column, (String) data.getField(column.getName()));
-                        }
-                    }
-
-                    @Override
-                    public void timestampColumn(Column column) {
-                        if (data.getField(column.getName()) == null) {
-                            pageBuilder.setNull(column);
-                            return;
-                        }
-                        if (data.getField(column.getName()).getClass() == LocalDate.class) {
-                            pageBuilder.setTimestamp(column, ((LocalDate) data.getField(column.getName())).atStartOfDay(ZoneId.systemDefault()).toInstant());
-                        } else if (data.getField(column.getName()).getClass() == LocalDateTime.class) {
-                            pageBuilder.setTimestamp(column, ((LocalDateTime) data.getField(column.getName())).atZone(ZoneId.systemDefault()).toInstant());
-                        } else {
-                            pageBuilder.setTimestamp(column, ((OffsetDateTime) data.getField(column.getName())).toInstant());
-                        }
-                    }
-
-                    @Override
-                    public void jsonColumn(Column column) {
-                        throw new NotImplementedException("JSON Type is not supported");
-                    }
-                });
-
-                pageBuilder.addRecord();
+                    pageBuilder.addRecord();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
 
-        pageBuilder.finish();
-        pageBuilder.close();
         return CONFIG_MAPPER_FACTORY.newTaskReport();
     }
 
