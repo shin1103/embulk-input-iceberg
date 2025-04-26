@@ -28,7 +28,7 @@ group = "io.github.shin1103"
 
 // Set the version of the plugin.
 //version = "0.0.1-SNAPSHOT"
-version = "0.1.0"
+version = "0.1.1"
 
 // Set the description of your plugin.
 description = "An Embulk plugin to load iceberg data."
@@ -149,7 +149,7 @@ publishing {
             groupId = "io.github.shin1103"
             artifactId = "embulk-input-iceberg"
 //            version = "0.0.1-SNAPSHOT"
-            version = "0.1.0"
+            version = "0.1.1"
 
             from components.java
             // javadocJar and sourcesJar are added by java.withJavadocJar() and java.withSourcesJar() above.

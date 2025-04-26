@@ -176,14 +176,16 @@ public class IcebergInputPlugin implements InputPlugin {
     }
 
     private Table getTable(PluginTask task) {
-        try(JdbcDriverMangerLoaderSwap ignored = new JdbcDriverMangerLoaderSwap(task)){
-            Catalog catalog = IcebergCatalogFactory.createCatalog(task.getCatalogType(), task);
-            Namespace n_space = Namespace.of(task.getNamespace());
-            TableIdentifier name = TableIdentifier.of(n_space, task.getTable());
-            Table table = catalog.loadTable(name);
-            logger.debug(table.schemas().toString());
+        try (ClassLoaderSwap<? extends IcebergInputPlugin> ignored = new ClassLoaderSwap<>(this.getClass())) {
+            try(JdbcDriverMangerLoaderSwap ignored2 = new JdbcDriverMangerLoaderSwap(task)){
+                Catalog catalog = IcebergCatalogFactory.createCatalog(task.getCatalogType(), task);
+                Namespace n_space = Namespace.of(task.getNamespace());
+                TableIdentifier name = TableIdentifier.of(n_space, task.getTable());
+                Table table = catalog.loadTable(name);
+                logger.debug(table.schemas().toString());
 
-            return table;
+                return table;
+            }
         }
     }
 
@@ -210,9 +212,7 @@ public class IcebergInputPlugin implements InputPlugin {
     public ConfigDiff resume(TaskSource taskSource, Schema schema, int taskCount, Control control) {
         // Thread.currentThread().getContextClassLoader() is used in org.apache.iceberg.common.DynMethods.
         // If this swap is not executed, classLoader is not work collect.
-        try (ClassLoaderSwap<? extends IcebergInputPlugin> ignored = new ClassLoaderSwap<>(this.getClass())) {
-            control.run(taskSource, schema, taskCount);
-        }
+        control.run(taskSource, schema, taskCount);
 
         return CONFIG_MAPPER_FACTORY.newConfigDiff();
     }
@@ -237,6 +237,8 @@ public class IcebergInputPlugin implements InputPlugin {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            pageBuilder.flush();
+            pageBuilder.finish();
         }
 
         return CONFIG_MAPPER_FACTORY.newTaskReport();
