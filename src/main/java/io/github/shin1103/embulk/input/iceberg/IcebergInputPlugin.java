@@ -176,16 +176,14 @@ public class IcebergInputPlugin implements InputPlugin {
     }
 
     private Table getTable(PluginTask task) {
-        try (ClassLoaderSwap<? extends IcebergInputPlugin> ignored = new ClassLoaderSwap<>(this.getClass())) {
-            try(JdbcDriverMangerLoaderSwap ignored2 = new JdbcDriverMangerLoaderSwap(task)){
-                Catalog catalog = IcebergCatalogFactory.createCatalog(task.getCatalogType(), task);
-                Namespace n_space = Namespace.of(task.getNamespace());
-                TableIdentifier name = TableIdentifier.of(n_space, task.getTable());
-                Table table = catalog.loadTable(name);
-                logger.debug(table.schemas().toString());
+        try (JdbcDriverMangerLoaderSwap ignored2 = new JdbcDriverMangerLoaderSwap(task)) {
+            Catalog catalog = IcebergCatalogFactory.createCatalog(task.getCatalogType(), task);
+            Namespace n_space = Namespace.of(task.getNamespace());
+            TableIdentifier name = TableIdentifier.of(n_space, task.getTable());
+            Table table = catalog.loadTable(name);
+            logger.debug(table.schemas().toString());
 
-                return table;
-            }
+            return table;
         }
     }
 
@@ -223,25 +221,27 @@ public class IcebergInputPlugin implements InputPlugin {
 
     @Override
     public TaskReport run(TaskSource taskSource, Schema schema, int i, PageOutput pageOutput) {
-        final PluginTask task = TASK_MAPPER.map(taskSource, this.getTaskClass());
+        try (ClassLoaderSwap<? extends IcebergInputPlugin> ignored = new ClassLoaderSwap<>(this.getClass())) {
+            final PluginTask task = TASK_MAPPER.map(taskSource, this.getTaskClass());
 
-        BufferAllocator allocator = Exec.getBufferAllocator();
-        try(PageBuilder pageBuilder = Exec.getPageBuilder(allocator, schema, pageOutput)){
-            Table table = this.getTable(task);
-            try(CloseableIterable<Record> scan = IcebergScanBuilder.createBuilder(table, task).build()){
-                for (Record data : scan) {
-                    schema.visitColumns(new IcebergColumnVisitor(data, pageBuilder));
+            BufferAllocator allocator = Exec.getBufferAllocator();
+            try (PageBuilder pageBuilder = Exec.getPageBuilder(allocator, schema, pageOutput)) {
+                Table table = this.getTable(task);
+                try (CloseableIterable<Record> scan = IcebergScanBuilder.createBuilder(table, task).build()) {
+                    for (Record data : scan) {
+                        schema.visitColumns(new IcebergColumnVisitor(data, pageBuilder));
 
-                    pageBuilder.addRecord();
+                        pageBuilder.addRecord();
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                pageBuilder.flush();
+                pageBuilder.finish();
             }
-            pageBuilder.flush();
-            pageBuilder.finish();
-        }
 
-        return CONFIG_MAPPER_FACTORY.newTaskReport();
+            return CONFIG_MAPPER_FACTORY.newTaskReport();
+        }
     }
 
     @Override
