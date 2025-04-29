@@ -58,6 +58,8 @@ public class IcebergColumnVisitor implements ColumnVisitor {
         }
         if (data.getField(column.getName()).getClass() == LocalTime.class) {
             pageBuilder.setString(column, ((LocalTime) data.getField(column.getName())).toString());
+        } else if (data.getField(column.getName()).getClass() == OffsetTime.class) {
+            pageBuilder.setString(column, ((OffsetTime) data.getField(column.getName())).toString());
         } else if (data.getField(column.getName()).getClass() == BigDecimal.class) {
             pageBuilder.setString(column, ((BigDecimal) data.getField(column.getName())).toPlainString());
         } else {
