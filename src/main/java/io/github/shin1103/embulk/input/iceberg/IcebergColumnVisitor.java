@@ -8,6 +8,7 @@ import org.embulk.spi.PageBuilder;
 
 import java.math.BigDecimal;
 import java.time.*;
+import java.util.UUID;
 
 public class IcebergColumnVisitor implements ColumnVisitor {
     private final Record data;
@@ -62,7 +63,10 @@ public class IcebergColumnVisitor implements ColumnVisitor {
             pageBuilder.setString(column, ((OffsetTime) data.getField(column.getName())).toString());
         } else if (data.getField(column.getName()).getClass() == BigDecimal.class) {
             pageBuilder.setString(column, ((BigDecimal) data.getField(column.getName())).toPlainString());
-        } else {
+        } else if (data.getField(column.getName()).getClass() == UUID.class) {
+            pageBuilder.setString(column, ((UUID) data.getField(column.getName())).toString());
+        }
+        else {
             pageBuilder.setString(column, (String) data.getField(column.getName()));
         }
     }

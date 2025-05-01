@@ -148,7 +148,6 @@ Types are different from [iceberg](https://iceberg.apache.org/spec/#primitive-ty
 So some iceberg type isn't supported.
 
 Unsupported Iceberg Types
-- UUID
 - FIXED
 - BINARY
 - STRUCT

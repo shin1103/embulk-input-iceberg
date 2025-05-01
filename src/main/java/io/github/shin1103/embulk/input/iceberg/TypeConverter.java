@@ -30,10 +30,10 @@ public class TypeConverter {
                 return Types.TIMESTAMP;
             case STRING:
             case TIME:
+            case UUID:
                 return Types.STRING;
             case TIMESTAMP_NANO: // Support Iceberg v3
             case UNKNOWN:
-            case UUID:
             case FIXED:
             case BINARY:
             case STRUCT:
