@@ -40,6 +40,7 @@ We need to set Environment Variable below to access Object Storage.
 - AWS_SECRET_ACCESS_KEY
 
 ## Example
+Example is written by maven style. rubygem style is also available.
 1. Select All rows and columns.
 ```yaml
 in:
