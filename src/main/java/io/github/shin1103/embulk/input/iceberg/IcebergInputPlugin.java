@@ -29,7 +29,8 @@ import org.slf4j.LoggerFactory;
 // https://docs.google.com/document/d/1oKpvgstKlgmgUUja8hYqTqWxtwsgIbONoUaEj8lO0FE/edit?pli=1&tab=t.0
 // https://dev.embulk.org/topics/get-ready-for-v0.11-and-v1.0-updated.html
 
-public class IcebergInputPlugin implements InputPlugin {
+public class IcebergInputPlugin implements InputPlugin
+{
 
     private static final Logger logger = LoggerFactory.getLogger(IcebergInputPlugin.class);
 
@@ -74,7 +75,6 @@ public class IcebergInputPlugin implements InputPlugin {
          */
         String getCatalogType();
 
-
         @Config("uri")
         @ConfigDefault("null")
         /*
@@ -113,15 +113,15 @@ public class IcebergInputPlugin implements InputPlugin {
         @Config("path_style_access")
         @ConfigDefault("true")
         /*
-          use path_style_access.
-          If you use Example settings, actual path is "http://localhost:9000/warehouse/".
+          Use path_style_access.
+          If you use Example settings, the actual path is "http://localhost:9000/warehouse/".
          */
         Optional<String> getPathStyleAccess();
 
         @Config("decimal_as_string")
         @ConfigDefault("false")
         /*
-          Embulk can't treat Bigdecimal. If you want to treat precise, treat as string.
+          Embulk can't treat BigDecimal. If you want to treat precisely, treat as string.
          */
         boolean getDecimalAsString();
 
@@ -163,7 +163,8 @@ public class IcebergInputPlugin implements InputPlugin {
     }
 
     @Override
-    public ConfigDiff transaction(ConfigSource configSource, Control control) {
+    public ConfigDiff transaction(ConfigSource configSource, Control control)
+    {
 
         try (ClassLoaderSwap<? extends IcebergInputPlugin> ignored = new ClassLoaderSwap<>(this.getClass())) {
             final PluginTask task = CONFIG_MAPPER.map(configSource, this.getTaskClass());
@@ -175,11 +176,12 @@ public class IcebergInputPlugin implements InputPlugin {
         }
     }
 
-    private Table getTable(PluginTask task) {
+    private Table getTable(PluginTask task)
+    {
         try (JdbcDriverMangerLoaderSwap ignored2 = new JdbcDriverMangerLoaderSwap(task)) {
             Catalog catalog = IcebergCatalogFactory.createCatalog(task.getCatalogType(), task);
-            Namespace n_space = Namespace.of(task.getNamespace());
-            TableIdentifier name = TableIdentifier.of(n_space, task.getTable());
+            Namespace namespace = Namespace.of(task.getNamespace());
+            TableIdentifier name = TableIdentifier.of(namespace, task.getTable());
             Table table = catalog.loadTable(name);
             logger.debug(table.schemas().toString());
 
@@ -187,19 +189,22 @@ public class IcebergInputPlugin implements InputPlugin {
         }
     }
 
-    private Schema createEmbulkSchema(org.apache.iceberg.Schema icebergSchema, PluginTask task){
+    private Schema createEmbulkSchema(org.apache.iceberg.Schema icebergSchema, PluginTask task)
+    {
         Schema.Builder schemaBuilder = Schema.builder();
 
-        for (Types.NestedField col : icebergSchema.columns()){
+        for (Types.NestedField col : icebergSchema.columns()) {
             if (task.getColumns().isPresent()) {
                 if (task.getColumns().get().contains(col.name())) {
-                    // only add column defined columns option in config.yml
+                    // only add a column defined columns option in config.yml
                     schemaBuilder.add(col.name(), TypeConverter.convertIcebergTypeToEmbulkType(col.type(), task));
-                } else {
+                }
+                else {
                     continue;
                 }
-            } else {
-                // add all columns if columns option is not defined in config.yml
+            }
+            else {
+                // add all columns if a column option is not defined in config.yml
                 schemaBuilder.add(col.name(), TypeConverter.convertIcebergTypeToEmbulkType(col.type(), task));
             }
         }
@@ -207,7 +212,8 @@ public class IcebergInputPlugin implements InputPlugin {
     }
 
     @Override
-    public ConfigDiff resume(TaskSource taskSource, Schema schema, int taskCount, Control control) {
+    public ConfigDiff resume(TaskSource taskSource, Schema schema, int taskCount, Control control)
+    {
         // Thread.currentThread().getContextClassLoader() is used in org.apache.iceberg.common.DynMethods.
         // If this swap is not executed, classLoader is not work collect.
         control.run(taskSource, schema, taskCount);
@@ -216,11 +222,13 @@ public class IcebergInputPlugin implements InputPlugin {
     }
 
     @Override
-    public void cleanup(TaskSource taskSource, Schema schema, int i, List<TaskReport> list) {
+    public void cleanup(TaskSource taskSource, Schema schema, int i, List<TaskReport> list)
+    {
     }
 
     @Override
-    public TaskReport run(TaskSource taskSource, Schema schema, int i, PageOutput pageOutput) {
+    public TaskReport run(TaskSource taskSource, Schema schema, int i, PageOutput pageOutput)
+    {
         try (ClassLoaderSwap<? extends IcebergInputPlugin> ignored = new ClassLoaderSwap<>(this.getClass())) {
             final PluginTask task = TASK_MAPPER.map(taskSource, this.getTaskClass());
 
@@ -233,7 +241,8 @@ public class IcebergInputPlugin implements InputPlugin {
 
                         pageBuilder.addRecord();
                     }
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     throw new RuntimeException(e);
                 }
                 pageBuilder.flush();

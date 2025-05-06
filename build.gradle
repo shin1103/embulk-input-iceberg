@@ -2,6 +2,7 @@ plugins {
     id "java"
     id "maven-publish"
     id "signing"
+    id "checkstyle"
 
     // Apply this Gradle plugin.
     id "org.embulk.embulk-plugins" version "0.7.0"
@@ -228,6 +229,19 @@ signing {
 //    useInMemoryPgpKeys(System.getenv("PGP_SIGNING_KEY") , System.getenv("PGP_SIGNING_KEY_PASSPHRASE"))
 //    required { gradle.taskGraph.hasTask("publishMavenJavaPublicationToMavenRepository") }
     sign publishing.publications.maven
+}
+
+checkstyle {
+    configFile = file("${project.rootDir}/config/checkstyle/checkstyle.xml")
+}
+
+checkstyleMain {
+    configFile = file("${project.rootDir}/config/checkstyle/default.xml")
+    ignoreFailures = true
+}
+checkstyleTest {
+    configFile = file("${project.rootDir}/config/checkstyle/default.xml")
+    ignoreFailures = true
 }
 
 // Enable the following "gem" and "gemPush" tasks if you want to publish your plugin also as a Ruby Gem.

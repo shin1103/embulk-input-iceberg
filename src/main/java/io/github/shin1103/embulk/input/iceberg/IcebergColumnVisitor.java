@@ -10,15 +10,19 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.UUID;
 
-public class IcebergColumnVisitor implements ColumnVisitor {
+public class IcebergColumnVisitor implements ColumnVisitor
+{
     private final Record data;
     private final PageBuilder pageBuilder;
 
-    public IcebergColumnVisitor(Record data, PageBuilder pageBuilder){
+    public IcebergColumnVisitor(Record data, PageBuilder pageBuilder)
+    {
         this.data = data;
         this.pageBuilder = pageBuilder;
     }
-    public void booleanColumn(Column column) {
+
+    public void booleanColumn(Column column)
+    {
         if (data.getField(column.getName()) == null) {
             pageBuilder.setNull(column);
             return;
@@ -26,44 +30,53 @@ public class IcebergColumnVisitor implements ColumnVisitor {
         pageBuilder.setBoolean(column, (Boolean) data.getField(column.getName()));
     }
 
-    public void longColumn(Column column) {
+    public void longColumn(Column column)
+    {
         if (data.getField(column.getName()) == null) {
             pageBuilder.setNull(column);
             return;
         }
         if (data.getField(column.getName()).getClass() == Long.class) {
             pageBuilder.setLong(column, (Long) data.getField(column.getName()));
-        } else {
+        }
+        else {
             pageBuilder.setLong(column, ((Integer) data.getField(column.getName())).longValue());
         }
     }
 
-    public void doubleColumn(Column column) {
+    public void doubleColumn(Column column)
+    {
         if (data.getField(column.getName()) == null) {
             pageBuilder.setNull(column);
             return;
         }
         if (data.getField(column.getName()).getClass() == BigDecimal.class) {
             pageBuilder.setDouble(column, ((BigDecimal) data.getField(column.getName())).doubleValue());
-        } else if (data.getField(column.getName()).getClass() == Float.class) {
+        }
+        else if (data.getField(column.getName()).getClass() == Float.class) {
             pageBuilder.setDouble(column, ((Float) data.getField(column.getName())).doubleValue());
-        } else {
+        }
+        else {
             pageBuilder.setDouble(column, (Double) data.getField(column.getName()));
         }
     }
 
-    public void stringColumn(Column column) {
+    public void stringColumn(Column column)
+    {
         if (data.getField(column.getName()) == null) {
             pageBuilder.setNull(column);
             return;
         }
         if (data.getField(column.getName()).getClass() == LocalTime.class) {
             pageBuilder.setString(column, ((LocalTime) data.getField(column.getName())).toString());
-        } else if (data.getField(column.getName()).getClass() == OffsetTime.class) {
+        }
+        else if (data.getField(column.getName()).getClass() == OffsetTime.class) {
             pageBuilder.setString(column, ((OffsetTime) data.getField(column.getName())).toString());
-        } else if (data.getField(column.getName()).getClass() == BigDecimal.class) {
+        }
+        else if (data.getField(column.getName()).getClass() == BigDecimal.class) {
             pageBuilder.setString(column, ((BigDecimal) data.getField(column.getName())).toPlainString());
-        } else if (data.getField(column.getName()).getClass() == UUID.class) {
+        }
+        else if (data.getField(column.getName()).getClass() == UUID.class) {
             pageBuilder.setString(column, ((UUID) data.getField(column.getName())).toString());
         }
         else {
@@ -71,21 +84,25 @@ public class IcebergColumnVisitor implements ColumnVisitor {
         }
     }
 
-    public void timestampColumn(Column column) {
+    public void timestampColumn(Column column)
+    {
         if (data.getField(column.getName()) == null) {
             pageBuilder.setNull(column);
             return;
         }
         if (data.getField(column.getName()).getClass() == LocalDate.class) {
             pageBuilder.setTimestamp(column, ((LocalDate) data.getField(column.getName())).atStartOfDay(ZoneId.systemDefault()).toInstant());
-        } else if (data.getField(column.getName()).getClass() == LocalDateTime.class) {
+        }
+        else if (data.getField(column.getName()).getClass() == LocalDateTime.class) {
             pageBuilder.setTimestamp(column, ((LocalDateTime) data.getField(column.getName())).atZone(ZoneId.systemDefault()).toInstant());
-        } else {
+        }
+        else {
             pageBuilder.setTimestamp(column, ((OffsetDateTime) data.getField(column.getName())).toInstant());
         }
     }
 
-    public void jsonColumn(Column column) {
+    public void jsonColumn(Column column)
+    {
         throw new NotImplementedException("JSON Type is not supported");
     }
 

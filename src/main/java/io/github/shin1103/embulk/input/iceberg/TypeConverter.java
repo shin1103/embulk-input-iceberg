@@ -3,14 +3,17 @@ package io.github.shin1103.embulk.input.iceberg;
 import org.embulk.spi.type.Type;
 import org.embulk.spi.type.Types;
 
-public class TypeConverter {
+public class TypeConverter
+{
+    private TypeConverter() {}
 
     /*
         https://iceberg.apache.org/spec/#primitive-types
      */
-    public static Type convertIcebergTypeToEmbulkType(org.apache.iceberg.types.Type icebergType, IcebergInputPlugin.PluginTask task){
+    public static Type convertIcebergTypeToEmbulkType(org.apache.iceberg.types.Type icebergType, IcebergInputPlugin.PluginTask task)
+    {
 
-        switch (icebergType.typeId()){
+        switch (icebergType.typeId()) {
             case BOOLEAN:
                 return Types.BOOLEAN;
             case INTEGER:
@@ -22,7 +25,8 @@ public class TypeConverter {
             case DECIMAL:
                 if (task.getDecimalAsString()) {
                     return Types.STRING;
-                } else {
+                }
+                else {
                     return Types.DOUBLE;
                 }
             case DATE:
@@ -40,7 +44,7 @@ public class TypeConverter {
             case LIST:
             case MAP:
             case VARIANT:
-                throw new UnsupportedOperationException(icebergType.typeId() +  " is not supported");
+                throw new UnsupportedOperationException(icebergType.typeId() + " is not supported");
             default:
                 throw new IllegalArgumentException();
         }

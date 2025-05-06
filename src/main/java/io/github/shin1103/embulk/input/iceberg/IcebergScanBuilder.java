@@ -4,9 +4,12 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.expressions.Expressions;
 
-public class IcebergScanBuilder {
+public class IcebergScanBuilder
+{
+    private IcebergScanBuilder() {}
 
-    public static IcebergGenerics.ScanBuilder createBuilder(Table table, IcebergInputPlugin.PluginTask task) {
+    public static IcebergGenerics.ScanBuilder createBuilder(Table table, IcebergInputPlugin.PluginTask task)
+    {
         IcebergGenerics.ScanBuilder builder = IcebergGenerics.read(table);
 
         // determine select columns

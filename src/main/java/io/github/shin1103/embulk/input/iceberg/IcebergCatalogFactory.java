@@ -11,14 +11,21 @@ import org.apache.iceberg.rest.RESTCatalog;
 import java.util.HashMap;
 import java.util.Map;
 
-public class IcebergCatalogFactory {
-    public enum CatalogType {
+public class IcebergCatalogFactory
+{
+    private IcebergCatalogFactory()
+    {
+    }
+
+    public enum CatalogType
+    {
         REST,
         JDBC,
         GLUE
     }
 
-    public static Catalog createCatalog(String catalogType, IcebergInputPlugin.PluginTask task) {
+    public static Catalog createCatalog(String catalogType, IcebergInputPlugin.PluginTask task)
+    {
         try {
             CatalogType type = CatalogType.valueOf(catalogType.toUpperCase());
 
@@ -32,12 +39,14 @@ public class IcebergCatalogFactory {
                 default:
                     throw new UnsupportedOperationException("");
             }
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             throw new UnsupportedOperationException("Invalid value: " + catalogType);
         }
     }
 
-    private static RESTCatalog createRestCatalog(IcebergInputPlugin.PluginTask task) {
+    private static RESTCatalog createRestCatalog(IcebergInputPlugin.PluginTask task)
+    {
         Map<String, String> properties = new HashMap<>();
 
         properties.put(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
@@ -48,7 +57,7 @@ public class IcebergCatalogFactory {
         // https://github.com/apache/iceberg/issues/7709
         task.getPathStyleAccess().ifPresent(access -> properties.put(S3FileIOProperties.PATH_STYLE_ACCESS, access));
         // REST Catalog can read data using http protocol.
-        // But S3FileIO Library need to REGION and ACCESS_KEY info using Environment variable
+        // But S3FileIO Library needs to REGION and ACCESS_KEY info using Environment variable
 
         RESTCatalog catalog = new RESTCatalog();
         Configuration conf = new Configuration();
@@ -57,7 +66,8 @@ public class IcebergCatalogFactory {
         return catalog;
     }
 
-    private static GlueCatalog createGlueCatalog(IcebergInputPlugin.PluginTask task) {
+    private static GlueCatalog createGlueCatalog(IcebergInputPlugin.PluginTask task)
+    {
         Map<String, String> properties = new HashMap<>();
 
         properties.put(CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
@@ -73,7 +83,8 @@ public class IcebergCatalogFactory {
         return catalog;
     }
 
-    private static JdbcCatalog createJdbcCatalog(IcebergInputPlugin.PluginTask task) {
+    private static JdbcCatalog createJdbcCatalog(IcebergInputPlugin.PluginTask task)
+    {
         Map<String, String> properties = new HashMap<>();
 
         properties.put(CatalogProperties.CATALOG_IMPL, JdbcCatalog.class.getName());
@@ -93,6 +104,5 @@ public class IcebergCatalogFactory {
         catalog.setConf(conf);
         task.getCatalogName().ifPresent(catalogName -> catalog.initialize(catalogName, properties));
         return catalog;
-
     }
 }

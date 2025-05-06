@@ -7,21 +7,22 @@ import org.embulk.util.config.Task;
 import java.util.List;
 import java.util.Optional;
 
-public interface IcebergFilterOption extends Task {
+public interface IcebergFilterOption extends Task
+{
     @Config("type")
     @ConfigDefault("null")
-    public String getFilterType();
+    String getFilterType();
 
     @Config("column")
     @ConfigDefault("null")
-    public String getColumn();
+    String getColumn();
 
     @Config("value")
     @ConfigDefault("null")
-    public Optional<Object> getValue();
+    Optional<Object> getValue();
 
     @Config("in_values")
     @ConfigDefault("null")
-    public Optional<List<Object>> getInValues();
+    Optional<List<Object>> getInValues();
 
 }
