@@ -28,7 +28,7 @@ group = "io.github.shin1103"
 
 // Set the version of the plugin.
 //version = "0.0.1-SNAPSHOT"
-version = "0.2.0"
+version = "0.3.0"
 
 // Set the description of your plugin.
 description = "An Embulk plugin to load iceberg data."
@@ -145,12 +145,12 @@ javadocJar {
 // Publish it by: "./gradlew publishMavenPublicationToMavenRepository"
 publishing {
     publications {
-        maven(MavenPublication) {
+        create('maven', MavenPublication)  {
             groupId = "io.github.shin1103"
             artifactId = "embulk-input-iceberg"
-            version = "0.2.0"
+            version = "0.3.0"
 
-            from components.java
+            from ((SoftwareComponent) components.java)
             // javadocJar and sourcesJar are added by java.withJavadocJar() and java.withSourcesJar() above.
             // See: https://docs.gradle.org/current/javadoc/org/gradle/api/plugins/JavaPluginExtension.html
 

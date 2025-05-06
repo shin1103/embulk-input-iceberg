@@ -2,11 +2,12 @@ package io.github.shin1103.embulk.input.iceberg;
 
 import io.github.shin1103.embulk.util.ClassLoaderSwap;
 
-import org.apache.iceberg.Table;
+import org.apache.iceberg.*;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 
+import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Types;
@@ -16,10 +17,13 @@ import org.embulk.config.TaskReport;
 import org.embulk.config.TaskSource;
 import org.embulk.spi.*;
 
+import org.embulk.spi.Schema;
 import org.embulk.util.config.*;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.embulk.util.config.modules.ZoneIdModule;
 import org.slf4j.Logger;
@@ -160,6 +164,11 @@ public class IcebergInputPlugin implements InputPlugin {
         @Config("columns")
         @ConfigDefault("null")
         Optional<List<String>> getColumns();
+
+        List<String> getFiles();
+
+        void setFiles(List<String> files);
+
     }
 
     @Override
@@ -170,8 +179,22 @@ public class IcebergInputPlugin implements InputPlugin {
 
             Table table = this.getTable(task);
 
+            Scan<TableScan, FileScanTask, CombinedScanTask> scaner = IcebergScanBuilder.createScanner(table, task);
+            List<String> taskList = new ArrayList<>();
+            try ( CloseableIterable<FileScanTask> files = scaner.planFiles()  ) {
+                for (FileScanTask file : files) {
+                    taskList.add(file.file().location());
+                }
+            } catch  (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            task.setFiles(taskList);
+
             Schema schema = this.createEmbulkSchema(table.schema(), task);
-            return resume(task.toTaskSource(), schema, 1, control);
+            System.out.println("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
+            System.out.println(taskList.size());
+            return resume(task.toTaskSource(), schema, taskList.size(), control);
         }
     }
 
@@ -220,22 +243,45 @@ public class IcebergInputPlugin implements InputPlugin {
     }
 
     @Override
-    public TaskReport run(TaskSource taskSource, Schema schema, int i, PageOutput pageOutput) {
+    public TaskReport run(TaskSource taskSource, Schema schema, int taskIndex, PageOutput pageOutput) {
+        System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        System.out.println(taskIndex);
         try (ClassLoaderSwap<? extends IcebergInputPlugin> ignored = new ClassLoaderSwap<>(this.getClass())) {
             final PluginTask task = TASK_MAPPER.map(taskSource, this.getTaskClass());
 
             BufferAllocator allocator = Exec.getBufferAllocator();
             try (PageBuilder pageBuilder = Exec.getPageBuilder(allocator, schema, pageOutput)) {
                 Table table = this.getTable(task);
-                try (CloseableIterable<Record> scan = IcebergScanBuilder.createBuilder(table, task).build()) {
-                    for (Record data : scan) {
-                        schema.visitColumns(new IcebergColumnVisitor(data, pageBuilder));
 
-                        pageBuilder.addRecord();
+                var targetFile = task.getFiles().get(taskIndex);
+
+                Scan<TableScan, FileScanTask, CombinedScanTask> scaner = IcebergScanBuilder.createScanner(table, task);
+                try ( CloseableIterable<FileScanTask> files = scaner.planFiles()  ) {
+                    for (FileScanTask file : files) {
+                        if (Objects.equals(file.file().location(), targetFile)) {
+                            try (CloseableIterable<Record> result = IcebergGenerics.read(table).where(file.residual()).build()) {
+                                for (Record data : result) {
+                                    schema.visitColumns(new IcebergColumnVisitor(data, pageBuilder));
+                                    pageBuilder.addRecord();
+                                }
+                            }
+
+                        }
                     }
-                } catch (IOException e) {
+                } catch  (IOException e) {
                     throw new RuntimeException(e);
                 }
+
+
+//                try (CloseableIterable<Record> scan = IcebergScanBuilder.createBuilder(table, task).build()) {
+//                    for (Record data : scan) {
+//                        schema.visitColumns(new IcebergColumnVisitor(data, pageBuilder));
+//
+//                        pageBuilder.addRecord();
+//                    }
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
                 pageBuilder.flush();
                 pageBuilder.finish();
             }

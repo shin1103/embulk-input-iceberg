@@ -1,6 +1,6 @@
 package io.github.shin1103.embulk.input.iceberg;
 
-import org.apache.iceberg.Table;
+import org.apache.iceberg.*;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.expressions.Expressions;
 
@@ -59,5 +59,60 @@ public class IcebergScanBuilder {
             }
         });
         return builder;
+    }
+
+    public static Scan<TableScan, FileScanTask, CombinedScanTask> createScanner(Table table, IcebergInputPlugin.PluginTask task) {
+        Scan<TableScan, FileScanTask, CombinedScanTask> scanner = table.newScan();
+
+        // determine select columns
+        task.getColumns().ifPresent(scanner::select);
+
+        // determine select rows
+        task.getTableFilters().ifPresent(filters -> {
+            for (IcebergFilterOption filter : filters) {
+                // support filter is predicate expressions only
+                // https://iceberg.apache.org/docs/1.8.1/api/#expressions
+                switch (filter.getFilterType().toUpperCase()) {
+                    case "ISNULL":
+                        scanner.filter(Expressions.isNull(filter.getColumn()));
+                        continue;
+                    case "NOTNULL":
+                        scanner.filter(Expressions.notNull(filter.getColumn()));
+                        continue;
+                    case "EQUAL":
+                        filter.getValue().ifPresent(f -> scanner.filter(Expressions.equal(filter.getColumn(), f)));
+                        continue;
+                    case "NOTEQUAL":
+                        filter.getValue().ifPresent(f -> scanner.filter(Expressions.notEqual(filter.getColumn(), f)));
+                        continue;
+                    case "LESSTHAN":
+                        filter.getValue().ifPresent(f -> scanner.filter(Expressions.lessThan(filter.getColumn(), f)));
+                        continue;
+                    case "LESSTHANOREQUAL":
+                        filter.getValue().ifPresent(f -> scanner.filter(Expressions.lessThanOrEqual(filter.getColumn(), f)));
+                        continue;
+                    case "GREATERTHAN":
+                        filter.getValue().ifPresent(f -> scanner.filter(Expressions.greaterThan(filter.getColumn(), f)));
+                        continue;
+                    case "GREATERTHANOREQUAL":
+                        filter.getValue().ifPresent(f -> scanner.filter(Expressions.greaterThanOrEqual(filter.getColumn(), f)));
+                        continue;
+                    case "IN":
+                        filter.getInValues().ifPresent(f -> scanner.filter(Expressions.in(filter.getColumn(), f)));
+                        continue;
+                    case "NOTIN":
+                        filter.getInValues().ifPresent(f -> scanner.filter(Expressions.notIn(filter.getColumn(), f)));
+                        continue;
+                    case "STARTSWITH":
+                        filter.getValue().ifPresent(f -> scanner.filter(Expressions.startsWith(filter.getColumn(), (String) f)));
+                        continue;
+                    case "NOTSTARTSWITH":
+                        filter.getValue().ifPresent(f -> scanner.filter(Expressions.notStartsWith(filter.getColumn(), (String) f)));
+                        continue;
+                    default:
+                }
+            }
+        });
+        return scanner;
     }
 }
