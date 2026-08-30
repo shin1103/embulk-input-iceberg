@@ -43,9 +43,9 @@ configurations {
 
 java {
     toolchain {
-        // iceberg support Java 11, 17, or 21
+        // iceberg 1.11 supports Java 17 or 21
         // https://github.com/apache/iceberg
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 
     // "javadoc" JAR and "sources" JAR are required to publish the plugin to Maven Central.
@@ -54,8 +54,8 @@ java {
 }
 
 ext {
-    icebergVersion = '1.8.1'
-    hadoopVersion = '3.4.0'
+    icebergVersion = '1.11.0'
+    hadoopVersion = '3.4.3'
     jacksonVersion = '2.18.2'
 }
 
@@ -102,7 +102,7 @@ dependencies {
     implementation "org.apache.hadoop:hadoop-common:$hadoopVersion"
     implementation "org.apache.hadoop:hadoop-mapreduce-client-core:$hadoopVersion"
 
-    implementation "org.apache.parquet:parquet-avro:1.15.1"
+    implementation "org.apache.parquet:parquet-avro:1.17.1"
 
     testImplementation "junit:junit:4.13.2"
 

@@ -4,7 +4,7 @@ embulk-input-iceberg is the Embulk input plugin for Apache Iceberg.
 
 ## Overview
 Required Embulk version >= 0.11.5.  
-Java 11. iceberg API support Java 11 above. (Despite Embulk official support is Java 8)
+Java 17. iceberg 1.11 API supports Java 17 above. (Despite Embulk official support is Java 8)
 
 * **Plugin type**: input
 * **Resume supported**: no
@@ -29,7 +29,7 @@ Now Only support REST Catalog with MinIO Storage, and Glue Catalog.
 - **jdbc_driver_class_name**: jdbc class name (string, optional)
 - **jdbc_user**: jdbc database user name (string, optional)
 - **jdbc_pass**: jdbc database password (string, optional)
-- **table_filters**: filter rows. support filter is predicate expressions only. [expressions](https://iceberg.apache.org/docs/1.8.1/api/#expressions) (list, optional)
+- **table_filters**: filter rows. support filter is predicate expressions only. [expressions](https://iceberg.apache.org/docs/1.11.0/api/#expressions) (list, optional)
 - **columns**: select column name list. if not define, all columns are selected.  (list, optional)
 
 ### environment

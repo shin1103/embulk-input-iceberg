@@ -19,7 +19,7 @@ public class IcebergScanBuilder
         task.getTableFilters().ifPresent(filters -> {
             for (IcebergFilterOption filter : filters) {
                 // support filter is predicate expressions only
-                // https://iceberg.apache.org/docs/1.8.1/api/#expressions
+                // https://iceberg.apache.org/docs/1.11.0/api/#expressions
                 switch (filter.getFilterType().toUpperCase()) {
                     case "ISNULL":
                         builder.where(Expressions.isNull(filter.getColumn()));
