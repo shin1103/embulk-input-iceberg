@@ -4,7 +4,17 @@ embulk-input-iceberg is the Embulk input plugin for Apache Iceberg.
 
 ## Overview
 Required Embulk version >= 0.11.5.  
-Java 17. iceberg 1.11 API supports Java 17 above. (Despite Embulk official support is Java 8)
+Java 17 or above. (Despite Embulk official support is Java 8)
+
+### Java / Iceberg compatibility
+This plugin uses Apache Iceberg 1.11.0, whose jars are compiled for Java 17, so Embulk must run on Java 17 or above.
+
+| plugin version | Iceberg | required Java |
+|----------------|---------|---------------|
+| 0.3.0 or later | 1.11.0  | 17 or above   |
+| 0.2.0          | 1.8.1   | 11 or above   |
+
+If you need to keep running Embulk on Java 11, use plugin version 0.2.0. Iceberg 1.10.2 is the last release that supports Java 11.
 
 * **Plugin type**: input
 * **Resume supported**: no
@@ -48,7 +58,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.2.0
+    version: 0.3.0
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -66,7 +76,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.2.0
+    version: 0.3.0
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -88,7 +98,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.2.0
+    version: 0.3.0
   namespace: "n_space"
   table: "my_table_2"
   catalog_type: "rest"
@@ -112,7 +122,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.2.0
+    version: 0.3.0
   namespace: "my_database" # Set Glue Database
   table: "my_table_2"
   catalog_type: "glue"
@@ -127,7 +137,7 @@ in:
     source: maven
     group: io.github.shin1103
     name: iceberg
-    version: 0.2.0
+    version: 0.3.0
   catalog_name: "taxi"
   namespace: "n_space"
   table: "taxi_list"

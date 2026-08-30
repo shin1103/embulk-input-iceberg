@@ -29,7 +29,7 @@ group = "io.github.shin1103"
 
 // Set the version of the plugin.
 //version = "0.0.1-SNAPSHOT"
-version = "0.2.0"
+version = "0.3.0"
 
 // Set the description of your plugin.
 description = "An Embulk plugin to load iceberg data."
@@ -93,8 +93,10 @@ dependencies {
     implementation "com.github.ben-manes.caffeine:caffeine:3.1.1"
     implementation "org.apache.iceberg:iceberg-common:$icebergVersion"
     implementation "org.apache.iceberg:iceberg-parquet:$icebergVersion"
+    // iceberg-data 1.11 registers Avro, Parquet and ORC format models eagerly,
+    // so iceberg-orc must be on the runtime classpath even though only Parquet is read.
+    implementation "org.apache.iceberg:iceberg-orc:$icebergVersion"
     implementation "org.apache.iceberg:iceberg-data:$icebergVersion"
-    implementation "org.apache.iceberg:iceberg-flink-1.20:$icebergVersion"
     implementation "org.apache.iceberg:iceberg-aws:$icebergVersion"
     implementation "org.apache.iceberg:iceberg-bundled-guava:$icebergVersion"
     implementation "org.apache.iceberg:iceberg-aws-bundle:$icebergVersion"
@@ -149,7 +151,7 @@ publishing {
         create('maven', MavenPublication)  {
             groupId = "io.github.shin1103"
             artifactId = "embulk-input-iceberg"
-            version = "0.2.0"
+            version = "0.3.0"
 
             from ((SoftwareComponent) components.java)
             // javadocJar and sourcesJar are added by java.withJavadocJar() and java.withSourcesJar() above.
